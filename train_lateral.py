@@ -47,8 +47,7 @@ if __name__ == '__main__':
         net.set_learned(True)
         net.set_lateral_mode(False)
 
-    net.conv1.lateral = torch.nn.parameter.Parameter(
-        (net.conv1.lateral - net.conv1.lateral.mean(1).view(-1, 1)) / net.conv1.lateral.std(1).view(-1, 1))
+        net.process_lateral()
     PATH = './cifar_net_l1.pth'
     torch.save(net.state_dict(), PATH)
    # with torch.no_grad():
