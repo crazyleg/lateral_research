@@ -1,3 +1,4 @@
+import pandas as pd
 import torch
 from torch import optim
 from torch import nn
@@ -9,11 +10,22 @@ from torch.autograd import Variable
 from model import Net
 USE_CUDA = True if torch.cuda.is_available() else False
 device = torch.device("cuda" if USE_CUDA else "cpu")
+class AddGaussianNoise(object):
+    def __init__(self, mean=0., std=1.):
+        self.std = std
+        self.mean = mean
+
+    def __call__(self, tensor):
+        return tensor + torch.randn(tensor.size()) * self.std + self.mean
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
 
 if __name__ == '__main__':
     transform = transforms.Compose(
         [transforms.ToTensor(),
-         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+         AddGaussianNoise(0., 0.5)])
 
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                             download=True, transform=transform)
@@ -30,7 +42,7 @@ if __name__ == '__main__':
     net = Net()
     net = net.to(device)
 
-    PATH = './cifar_net.pth'
+    PATH = './cifar_net_n06.pth'
     net.load_state_dict(torch.load(PATH,  map_location=torch.device(device)))
     net.eval()
     net.set_lateral_mode(True)
@@ -48,7 +60,7 @@ if __name__ == '__main__':
         net.set_lateral_mode(False)
 
         net.process_lateral()
-    PATH = './cifar_net_l1.pth'
+    PATH = './cifar_net_l1_n06_normalized.pth'
     torch.save(net.state_dict(), PATH)
    # with torch.no_grad():
      #   for data in testloader:

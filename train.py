@@ -12,20 +12,33 @@ from model import Net
 USE_CUDA = True if torch.cuda.is_available() else False
 device = torch.device("cuda" if USE_CUDA else "cpu")
 
+class AddGaussianNoise(object):
+    def __init__(self, mean=0., std=1.):
+        self.std = std
+        self.mean = mean
+
+    def __call__(self, tensor):
+        return tensor + torch.randn(tensor.size()) * self.std + self.mean
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
+
 if __name__ == '__main__':
     transform = transforms.Compose(
         [transforms.ToTensor(),
-         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+         AddGaussianNoise(0., 0.5)])
 
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                             download=True, transform=transform)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=64,
-                                              shuffle=True, num_workers=16)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
+                                              shuffle=True, num_workers=4)
 
     testset = torchvision.datasets.CIFAR10(root='./data', train=False,
                                            download=True, transform=transform)
     testloader = torch.utils.data.DataLoader(testset, batch_size=4,
                                              shuffle=False, num_workers=16)
+
 
     classes = ('plane', 'car', 'bird', 'cat',
                'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
@@ -72,7 +85,7 @@ if __name__ == '__main__':
                 100 * correct / total))
 
     print('Finished Training')
-    PATH = './cifar_net.pth'
+    PATH = './cifar_net_n06.pth'
     torch.save(net.state_dict(), PATH)
     # print('Start lateral learning')
     #
