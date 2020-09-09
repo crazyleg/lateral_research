@@ -40,12 +40,12 @@ class LateralConv2d(nn.Conv2d):
         assert out_channels == self.laterals.shape[1]
 
         # rectify and normalize feature maps so that at every spatial location n, the sum over all filters is unity
-        feature_maps = torch.relu(feature_maps)
+        # feature_maps = torch.relu(feature_maps)
         feature_maps = torch.reshape(feature_maps, (nsamples, out_channels, width * height))
 
         # safe div to normalize feature maps
-        feature_maps = feature_maps / torch.sum(feature_maps, dim=1, keepdim=True)
-        feature_maps[feature_maps != feature_maps] = 0.
+        # feature_maps = feature_maps / torch.sum(feature_maps, dim=1, keepdim=True)
+        # feature_maps[feature_maps != feature_maps] = 0.
 
         # calculate lateral weights
         expected_iters = len(list(itertools.combinations_with_replacement(range(out_channels), 2)))
@@ -70,7 +70,7 @@ class LateralConv2d(nn.Conv2d):
             print("LATERALS CALCULATED SUCCESSFULLY")
 
         # XXX: wtf inhibition ??
-        self.laterals -= 1.
+        # self.laterals -= 1.
 
         self.is_laterals_enabled = True
         self._feature_maps = []
