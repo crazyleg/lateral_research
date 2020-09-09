@@ -1,0 +1,50 @@
+import torch
+import pytorch_lightning as pl
+
+from torch import nn, optim
+
+
+class TrainPipe(pl.LightningModule):
+    def __init__(self, *args, model):
+        super(TrainPipe, self).__init__()
+
+        self.model = model
+
+    def configure_optimizers(self):
+        return optim.Adam(self.parameters(), lr=1e-3)
+
+    def forward(self, x):
+        return self.model(x)
+
+    def training_step(self, batch, batch_idx):
+        x, y = batch
+        y_pred = self(x)
+        loss = nn.functional.cross_entropy(y_pred, y)
+        accuracy = (torch.argmax(y_pred, 1) == y).float().mean()
+
+        result = pl.TrainResult(loss)
+        result.log('loss/train', loss, prog_bar=True)
+        result.log('accuracy/train', accuracy, prog_bar=True)
+        return result
+
+    def validation_step(self, batch, batch_idx):
+        x, y = batch
+        y_pred = self(x)
+        loss = nn.functional.cross_entropy(y_pred, y)
+        accuracy = (torch.argmax(y_pred, 1) == y).float().mean()
+
+        result = pl.EvalResult(checkpoint_on=loss)
+        result.log('loss/val', loss, prog_bar=True)
+        result.log('accuracy/val', accuracy, prog_bar=True)
+        return result
+
+    def test_step(self, batch, batch_idx):
+        return self.validation_step(batch, batch_idx)
+
+    def start_lateral_training(self):
+        self.model.collect_feature_maps()
+        self.freeze()
+
+    def finish_lateral_training(self):
+        self.model.calculate_laterals()
+        self.unfreeze()
