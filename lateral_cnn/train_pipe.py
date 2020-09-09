@@ -23,8 +23,8 @@ class TrainPipe(pl.LightningModule):
         accuracy = (torch.argmax(y_pred, 1) == y).float().mean()
 
         result = pl.TrainResult(loss)
-        result.log('loss/train', loss, prog_bar=True)
-        result.log('accuracy/train', accuracy, prog_bar=True)
+        result.log('loss/train', loss, prog_bar=True, on_epoch=True)
+        result.log('accuracy/train', accuracy, prog_bar=True, on_epoch=True)
         return result
 
     def validation_step(self, batch, batch_idx):
@@ -48,3 +48,9 @@ class TrainPipe(pl.LightningModule):
     def finish_lateral_training(self):
         self.model.calculate_laterals()
         self.unfreeze()
+
+    def enable_laterals(self):
+        self.model.enable_laterals()
+
+    def disable_laterals(self):
+        self.model.disable_laterals()
