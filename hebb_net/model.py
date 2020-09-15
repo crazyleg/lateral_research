@@ -23,24 +23,29 @@ class LinearHebbianFunction(autograd.Function):
     @staticmethod
     def backward(ctx, grad_output):
         input, weight, feedback_weight = ctx.saved_tensors
-        grad_input = grad_weight = None
+        grad_input = grad_weight = grad_feedback_weight = None
 
         if ctx.needs_input_grad[0]:
             grad_input = grad_output.mm(feedback_weight)
         if ctx.needs_input_grad[1]:
             grad_weight = grad_output.t().mm(input)
+        if ctx.needs_input_grad[2]:
+            grad_feedback_weight = grad_weight
+        else:
+            grad_feedback_weight = None
 
-        return grad_input, grad_weight, grad_weight
+        return grad_input, grad_weight, grad_feedback_weight
 
 
 class HebbianLinear(nn.Module):
-    def __init__(self, input_features, output_features):
+    def __init__(self, input_features, output_features, backward_type='FXFB'):
         super(HebbianLinear, self).__init__()
         self.input_features = input_features
         self.output_features = output_features
 
         self.forward_weight = nn.Parameter(torch.Tensor(output_features, input_features))
-        self.feedback_weight = nn.Parameter(torch.Tensor(output_features, input_features))
+        need_feedback_update = True if backward_type == 'URFB' else False
+        self.feedback_weight = nn.Parameter(torch.Tensor(output_features, input_features), requires_grad=need_feedback_update)
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -50,14 +55,13 @@ class HebbianLinear(nn.Module):
     def forward(self, input):
         return LinearHebbianFunction.apply(input, self.forward_weight, self.feedback_weight)
 
-
 class HebbMLP(nn.Module):
     def __init__(self, in_features):
         super(HebbMLP, self).__init__()
 
         self.in_features = in_features
-        self.lin1 = HebbianLinear(784, 128)
-        self.lin2 = HebbianLinear(128, 10)
+        self.lin1 = HebbianLinear(784, 128, backward_type='URFB')
+        self.lin2 = HebbianLinear(128, 10, backward_type='URFB')
 
     def forward(self, x):
         x = x.flatten(1, -1)
