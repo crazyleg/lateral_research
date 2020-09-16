@@ -1,10 +1,8 @@
 import torch
+import os
 import hydra
 from omegaconf import DictConfig
-import neptune
-
-# The init() function called this way assumes that
-# NEPTUNE_API_TOKEN environment variable is defined.
+from pytorch_lightning.loggers import CSVLogger, NeptuneLogger
 
 import pytorch_lightning as pl
 
@@ -17,21 +15,40 @@ device_id = None
 
 latest_checkpoint = ""
 
-@hydra.main(config_name="config/config.yaml")
+@hydra.main(config_path="config", config_name="config")
 def run(cfg: DictConfig):
     data_dir = '../data/'
     train_transforms = None
     val_transforms = None
 
+    loggers = []
+    csv_logger = CSVLogger("logs", name=cfg.experiment.name)
+    loggers.append(csv_logger)
+    if bool(cfg.batch_norm.use_batch_norm):
+        cfg.experiment.name += cfg.batch_norm.name
 
-    if cfg.experiment.name is not None:
-        neptune.set_project('crazyleg11/feedback-normalizations')
-        neptune.create_experiment(name='C10_baseline')
+    tags = [cfg.network.linear_module.name, 'Batch_use: '+str(cfg.batch_norm.use_batch_norm), cfg.experiment.optimizer,
+            cfg.experiment.lr]
+    if cfg.batch_norm.use_batch_norm:
+        tags.append(cfg.batch_norm.name)
+
+    neptune_logger = NeptuneLogger(
+        api_key=os.environ['NEPTUNE_API_TOKEN'],  # replace with your own
+        project_name='crazyleg11/feedback-normalizations',
+        experiment_name=cfg.experiment.name,  # Optional,
+        tags=tags,  # Optional,
+        offline_mode=not cfg.experiment.neptune
+    )
+    loggers.append(neptune_logger)
+
     mnist_dm = CIFAR10DataModule(data_dir, train_transforms=train_transforms, val_transforms=val_transforms)
-    mlp = HebbMLP(1)
-    train_pipe = TrainPipe(model=mlp)
+    mlp = HebbMLP(1, cfg=cfg)
+    train_pipe = TrainPipe(model=mlp, cfg=cfg)
 
-    classic_trainer = pl.Trainer(gpus=([device_id] if device_id is not None else None), max_epochs=10)
+    classic_trainer = pl.Trainer(gpus=([device_id] if device_id is not None else None),
+                                 max_epochs=cfg.experiment.max_epochs,
+                                 fast_dev_run=bool(cfg.experiment.fast_dev_run),
+                                 logger=loggers)
     print("TRAINING MLP")
     classic_trainer.fit(train_pipe, datamodule=mnist_dm)
 

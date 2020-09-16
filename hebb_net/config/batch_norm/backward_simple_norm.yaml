@@ -1,0 +1,3 @@
+# @package _group_
+use_batch_norm: True
+name: BackwardSimpleNorm

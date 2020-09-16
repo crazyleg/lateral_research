@@ -1,0 +1,4 @@
+# @package _group_
+batch_norm:
+  use_batch_norm: False
+  name: BatchNorm1d

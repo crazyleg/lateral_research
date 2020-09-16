@@ -1,0 +1,5 @@
+# @package _group_
+linear_module:
+  name:  HebbianLinear
+  extra_args:
+    backward_type: 'FRFB'
