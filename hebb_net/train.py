@@ -11,7 +11,7 @@ from pl_bolts.datamodules.cifar10_datamodule import CIFAR10DataModule
 from model import HebbMLP
 from train_pipe import TrainPipe
 
-device_id = None
+device_id = None if torch.cuda.device_count() == 0 else 0
 
 latest_checkpoint = ""
 
