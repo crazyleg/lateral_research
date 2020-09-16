@@ -1,8 +1,7 @@
 import torch
 import pytorch_lightning as pl
-
+import neptune
 from torch import nn, optim
-
 
 class TrainPipe(pl.LightningModule):
     def __init__(self, *args, model):
@@ -23,6 +22,8 @@ class TrainPipe(pl.LightningModule):
         accuracy = (torch.argmax(y_pred, 1) == y).float().mean()
 
         result = pl.TrainResult(loss)
+        neptune.log_metric('loss/train', loss, prog_bar=True, on_epoch=True)
+        neptune.log_metric('accuracy/train', accuracy, prog_bar=True, on_epoch=True)
         result.log('loss/train', loss, prog_bar=True, on_epoch=True)
         result.log('accuracy/train', accuracy, prog_bar=True, on_epoch=True)
         return result

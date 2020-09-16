@@ -26,7 +26,10 @@ class LinearHebbianFunction(autograd.Function):
         grad_input = grad_weight = grad_feedback_weight = None
 
         if ctx.needs_input_grad[0]:
-            grad_input = grad_output.mm(feedback_weight)
+            grad_input = grad_output.mm(weight)
+            # grad_input = torch.nn.functional.normalize(grad_input)
+            grad_input = fn.normalize(grad_input, p=2, dim=0)
+
         if ctx.needs_input_grad[1]:
             grad_weight = grad_output.t().mm(input)
         if ctx.needs_input_grad[2]:
@@ -35,7 +38,6 @@ class LinearHebbianFunction(autograd.Function):
             grad_feedback_weight = None
 
         return grad_input, grad_weight, grad_feedback_weight
-
 
 class HebbianLinear(nn.Module):
     def __init__(self, input_features, output_features, backward_type='FXFB'):
@@ -60,12 +62,15 @@ class HebbMLP(nn.Module):
         super(HebbMLP, self).__init__()
 
         self.in_features = in_features
-        self.lin1 = HebbianLinear(784, 128, backward_type='URFB')
-        self.lin2 = HebbianLinear(128, 10, backward_type='URFB')
+        self.lin1 = HebbianLinear(3072, 512, backward_type='URFB')
+        self.lin2 = HebbianLinear(512, 128, backward_type='URFB')
+        self.lin3 = HebbianLinear(128, 10, backward_type='URFB')
 
     def forward(self, x):
         x = x.flatten(1, -1)
         x = self.lin1(x)
         x = act_fn(x)
         x = self.lin2(x)
+        x = act_fn(x)
+        x = self.lin3(x)
         return x
