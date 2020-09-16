@@ -1,21 +1,25 @@
-import torch
-import os
 import hydra
-from omegaconf import DictConfig
-from pytorch_lightning.loggers import CSVLogger
 import neptune
-from pytorch_lightning.callbacks import EarlyStopping
-
 import pytorch_lightning as pl
-
+import torch
+from omegaconf import DictConfig
 from pl_bolts.datamodules.cifar10_datamodule import CIFAR10DataModule
+from pytorch_lightning.callbacks import EarlyStopping
+from pytorch_lightning.callbacks.base import Callback
+from pytorch_lightning.loggers import CSVLogger
+from train_pipe import TrainPipe
 
 from model import HebbMLP
-from train_pipe import TrainPipe
 
 device_id = None if torch.cuda.device_count() == 0 else 0
 
 latest_checkpoint = ""
+
+
+class EpochTracker(Callback):
+    def on_validation_end(trainer, pl_module):
+        neptune.log_metric('epoch', pl_module.current_epoch)
+
 
 @hydra.main(config_path="config", config_name="config")
 def run(cfg: DictConfig):
@@ -50,14 +54,19 @@ def run(cfg: DictConfig):
         min_delta=0.00,
         patience=5,
         verbose=False,
-        mode='max'
+        mode='max',
+        strict=True
     )
 
     train_pipe = TrainPipe(model=mlp, cfg=cfg)
+
+
+
     classic_trainer = pl.Trainer(gpus=([device_id] if device_id is not None else None),
                                  max_epochs=cfg.experiment.max_epochs,
                                  fast_dev_run=bool(cfg.experiment.fast_dev_run),
                                  early_stop_callback=early_stop_callback,
+                                 callbacks=[EpochTracker()],
                                  logger=loggers)
     print("TRAINING MLP")
     classic_trainer.fit(train_pipe, datamodule=mnist_dm)

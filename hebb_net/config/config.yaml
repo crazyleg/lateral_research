@@ -5,7 +5,7 @@ defaults:
 experiment:
   neptune: True
   fast_dev_run: True
-  max_epochs: 10
+  max_epochs: 100
   optimizer: Adam
   lr: 1e-3
   name: "${network.linear_module.name} + batch_norm:${batch_norm.use_batch_norm} + ${experiment.optimizer} + ${experiment.lr}"
