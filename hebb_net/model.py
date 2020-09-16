@@ -105,9 +105,6 @@ class HebbMLP(nn.Module):
         self.lin2 = lin_module(512, 128)
         self.lin3 = lin_module(128, 10)
 
-        # self.lin1 = HebbianLinear(3072, 512, backward_type='URFB')
-        # self.lin2 = HebbianLinear(512, 128, backward_type='URFB')
-        # self.lin3 = HebbianLinear(128, 10, backward_type='URFB')
 
     def forward(self, x):
         x = x.flatten(1, -1)

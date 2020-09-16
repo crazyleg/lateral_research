@@ -4,6 +4,7 @@ import hydra
 from omegaconf import DictConfig
 from pytorch_lightning.loggers import CSVLogger
 import neptune
+from pytorch_lightning.callbacks import EarlyStopping
 
 import pytorch_lightning as pl
 
@@ -43,11 +44,20 @@ def run(cfg: DictConfig):
 
     mnist_dm = CIFAR10DataModule(data_dir, train_transforms=train_transforms, val_transforms=val_transforms)
     mlp = HebbMLP(1, cfg=cfg)
-    train_pipe = TrainPipe(model=mlp, cfg=cfg)
 
+    early_stop_callback = EarlyStopping(
+        monitor='val_accuracy',
+        min_delta=0.00,
+        patience=5,
+        verbose=False,
+        mode='max'
+    )
+
+    train_pipe = TrainPipe(model=mlp, cfg=cfg)
     classic_trainer = pl.Trainer(gpus=([device_id] if device_id is not None else None),
                                  max_epochs=cfg.experiment.max_epochs,
                                  fast_dev_run=bool(cfg.experiment.fast_dev_run),
+                                 early_stop_callback=early_stop_callback,
                                  logger=loggers)
     print("TRAINING MLP")
     classic_trainer.fit(train_pipe, datamodule=mnist_dm)

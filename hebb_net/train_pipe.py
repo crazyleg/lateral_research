@@ -41,7 +41,7 @@ class TrainPipe(pl.LightningModule):
         loss = nn.functional.cross_entropy(y_pred, y)
         accuracy = (torch.argmax(y_pred, 1) == y).float().mean()
 
-        result = pl.EvalResult(checkpoint_on=loss)
+        result = pl.EvalResult(checkpoint_on=loss, early_stop_on=accuracy)
         result.log('loss/val', loss, prog_bar=True)
         result.log('accuracy/val', accuracy, prog_bar=True)
 
