@@ -89,6 +89,7 @@ class HebbMLP(nn.Module):
     def __init__(self, in_features, cfg):
         super(HebbMLP, self).__init__()
 
+        self.bn=False
         self.in_features = in_features
         self.cfg = cfg
         lin_module = partial(str_to_class(cfg.network.linear_module.name),
