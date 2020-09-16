@@ -17,7 +17,7 @@ latest_checkpoint = ""
 
 
 class EpochTracker(Callback):
-    def on_validation_end(trainer, pl_module):
+    def on_validation_end(self, trainer, pl_module):
         neptune.log_metric('epoch', pl_module.current_epoch)
 
 
