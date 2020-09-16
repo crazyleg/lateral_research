@@ -2,7 +2,8 @@ import torch
 import os
 import hydra
 from omegaconf import DictConfig
-from pytorch_lightning.loggers import CSVLogger, NeptuneLogger
+from pytorch_lightning.loggers import CSVLogger
+import neptune
 
 import pytorch_lightning as pl
 
@@ -32,14 +33,8 @@ def run(cfg: DictConfig):
     if cfg.batch_norm.use_batch_norm:
         tags.append(cfg.batch_norm.name)
 
-    neptune_logger = NeptuneLogger(
-        api_key=os.environ['NEPTUNE_API_TOKEN'],  # replace with your own
-        project_name='crazyleg11/feedback-normalizations',
-        experiment_name=cfg.experiment.name,  # Optional,
-        tags=tags,  # Optional,
-        offline_mode=not cfg.experiment.neptune
-    )
-    loggers.append(neptune_logger)
+    neptune.init('crazyleg11/feedback-normalizations')
+    neptune.create_experiment(name=cfg.experiment.name, tags=tags)
 
     mnist_dm = CIFAR10DataModule(data_dir, train_transforms=train_transforms, val_transforms=val_transforms)
     mlp = HebbMLP(1, cfg=cfg)
