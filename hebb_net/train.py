@@ -8,8 +8,8 @@ import pytorch_lightning as pl
 
 from pl_bolts.datamodules.cifar10_datamodule import CIFAR10DataModule
 
-from hebb_net.model import HebbMLP
-from hebb_net.train_pipe import TrainPipe
+from model import HebbMLP
+from train_pipe import TrainPipe
 
 device_id = None
 
