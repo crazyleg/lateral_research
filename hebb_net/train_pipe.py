@@ -30,8 +30,9 @@ class TrainPipe(pl.LightningModule):
         result = pl.TrainResult(loss)
         result.log('loss/train', loss, prog_bar=True, on_epoch=True)
         result.log('accuracy/train', accuracy, prog_bar=True, on_epoch=True)
-        for logger in self.logger:
-            logger.log_metrics({'loss/train':loss,'accuracy/train':accuracy})
+        self.logger[0].experiment.log_metrics({'loss/train':loss,'accuracy/train':accuracy})
+        self.logger[1].experiment.log_metric('loss/train', loss)
+        self.logger[1].experiment.log_metric('accuracy/train', accuracy)
         return result
 
     def validation_step(self, batch, batch_idx):
@@ -43,8 +44,10 @@ class TrainPipe(pl.LightningModule):
         result = pl.EvalResult(checkpoint_on=loss)
         result.log('loss/val', loss, prog_bar=True)
         result.log('accuracy/val', accuracy, prog_bar=True)
-        for logger in self.logger:
-            logger.log_metrics({'loss/val': loss, 'accuracy/val': accuracy})
+
+        self.logger[0].experiment.log_metrics({'loss/val': loss, 'accuracy/val': accuracy})
+        self.logger[1].experiment.log_metric('loss/val', loss)
+        self.logger[1].experiment.log_metric('accuracy/val', accuracy)
         return result
 
     def test_step(self, batch, batch_idx):
