@@ -22,8 +22,8 @@ class TrainPipe(pl.LightningModule):
         accuracy = (torch.argmax(y_pred, 1) == y).float().mean()
 
         result = pl.TrainResult(loss)
-        neptune.log_metric('loss/train', loss, prog_bar=True, on_epoch=True)
-        neptune.log_metric('accuracy/train', accuracy, prog_bar=True, on_epoch=True)
+        neptune.log_metric('loss/train', loss)
+        neptune.log_metric('accuracy/train', accuracy)
         result.log('loss/train', loss, prog_bar=True, on_epoch=True)
         result.log('accuracy/train', accuracy, prog_bar=True, on_epoch=True)
         return result
