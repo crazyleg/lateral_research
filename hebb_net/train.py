@@ -25,13 +25,18 @@ def run(cfg: DictConfig):
     loggers = []
     csv_logger = CSVLogger("logs", name=cfg.experiment.name)
     loggers.append(csv_logger)
-    if bool(cfg.batch_norm.use_batch_norm):
-        cfg.experiment.name += cfg.batch_norm.name
 
-    tags = [cfg.network.linear_module.name, 'Batch_use: '+str(cfg.batch_norm.use_batch_norm), cfg.experiment.optimizer,
+    tags = [cfg.network.linear_module.name, 'Batch_use: ' + str(cfg.batch_norm.use_batch_norm),
+            cfg.experiment.optimizer,
             cfg.experiment.lr]
-    if cfg.batch_norm.use_batch_norm:
+
+    if bool(cfg.batch_norm.use_batch_norm):
+        cfg.experiment.name += ' ' + cfg.batch_norm.name
         tags.append(cfg.batch_norm.name)
+
+    if cfg.network.linear_module.name == 'HebbianLinear':
+        tags.append(cfg.network.linear_module.extra_args.backward_type)
+        cfg.experiment.name += ' ' + cfg.network.linear_module.extra_args.backward_type
 
     neptune.init('crazyleg11/feedback-normalizations')
     neptune.create_experiment(name=cfg.experiment.name, tags=tags)
